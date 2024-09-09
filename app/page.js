@@ -1,9 +1,11 @@
 "use client";
 import ProductSelectDialog from "@/components/ProductSelectDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import axios from "axios";
-import { ChevronDown, Edit, Edit2, GripVertical } from "lucide-react";
+import { ChevronDown, Edit, Edit2, GripVertical, X } from "lucide-react";
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import testData from "../test.json";
 
 const reorder = (list, startIndex, endIndex) => {
   const result = Array.from(list);
@@ -15,14 +17,15 @@ const reorder = (list, startIndex, endIndex) => {
 
 export default function Home() {
   const [open, setOpen] = useState(false);
+  const [responseData, setResponseData] = useState([]);
+
   const [products, setProducts] = useState([
     {
       id: 0,
       product: {
         name: "",
         discount: {
-          amount: 0,
-          type: "flat",
+          enabled: false,
         },
         variants: [],
       },
@@ -36,16 +39,24 @@ export default function Home() {
         id: products.length + 1,
         product: {
           name: "",
-          discount: {},
+          discount: {
+            enabled: false,
+          },
           variants: [],
         },
       },
     ]);
   };
+  const removeProduct = (index) => {
+    const newProducts = [...products];
+    newProducts.splice(index, 1);
+    setProducts(newProducts);
+  };
 
   const getProducts = async (search, page) => {
     try {
-      const result = await axios.get("http://stageapi.monkcommerce.app/task/products/search", {
+      const result = await testData;
+      const data = await axios.get("http://stageapi.monkcommerce.app/task/products/search", {
         params: {
           search: search || "",
           page: page || 0,
@@ -57,7 +68,9 @@ export default function Home() {
           // "Content-Type": "application/json",
         },
       });
-      console.log("result.data", result.data);
+      console.log("data", data);
+      setResponseData(result);
+      console.log("result.data", result);
     } catch (error) {
       console.log("error", error);
     }
@@ -122,15 +135,49 @@ export default function Home() {
                               />
                             </div>
                           </div>
-                          <div>
-                            <button className="bg-teal-600 text-white w-max px-4 py-2 rounded-md hover:bg-teal-700">
-                              Add Discount
-                            </button>
+                          <div className="flex items-center gap-10">
+                            {!item.product.discount.enabled ? (
+                              <button
+                                onClick={() => {
+                                  setProducts((prev) => {
+                                    const newProducts = [...prev];
+                                    console.log("newProducts", newProducts);
+                                    newProducts[index].product.discount.enabled = true;
+                                    return newProducts;
+                                  });
+                                }}
+                                className="bg-teal-600 text-white w-max px-4 py-2 rounded-md hover:bg-teal-700"
+                              >
+                                Add Discount
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  className="border border-gray-300 relative rounded-md p-2 w-16 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                                />
+                                <Select defaultValue="flat" value={item.product.discount.type}>
+                                  <SelectTrigger className="w-[100px]">
+                                    <SelectValue placeholder="Theme" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="flat">Flat</SelectItem>
+                                    <SelectItem value="percentage">% Off</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+
+                            {products.length > 1 && (
+                              <X className="cursor-pointer" onClick={() => removeProduct(index)} />
+                            )}
                           </div>
                         </div>
-                        <div className="text-blue-500 underline cursor-pointer text-right">
-                          Show Variants <ChevronDown className="inline" />
-                        </div>
+                        {item.product.variants.length > 0 && (
+                          <div className="text-blue-500 underline cursor-pointer text-right">
+                            Show Variants <ChevronDown className="inline" />
+                          </div>
+                        )}
                       </>
                     )}
                   </Draggable>
@@ -149,7 +196,15 @@ export default function Home() {
           </button>
         </div>
       </div>
-      <ProductSelectDialog open={open} onOpenChange={setOpen} getProducts={getProducts} />
+      {open && (
+        <ProductSelectDialog
+          open={open}
+          onOpenChange={setOpen}
+          getProducts={getProducts}
+          responseData={responseData}
+          setResponseData={setResponseData}
+        />
+      )}
     </div>
   );
 }
