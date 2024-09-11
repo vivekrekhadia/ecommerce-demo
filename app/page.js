@@ -18,6 +18,8 @@ const reorder = (list, startIndex, endIndex) => {
 export default function Home() {
   const [open, setOpen] = useState(false);
   const [responseData, setResponseData] = useState([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(2);
 
   const [products, setProducts] = useState([
     {
@@ -55,11 +57,11 @@ export default function Home() {
 
   const getProducts = async (search, page) => {
     try {
-      const result = await testData;
-      const data = await axios.get("http://stageapi.monkcommerce.app/task/products/search", {
+      // const result = await testData;
+      const result = await axios.get("https://stageapi.monkcommerce.app/task/products/search", {
         params: {
           search: search || "",
-          page: page || 0,
+          page: 1,
           limit: 10,
         },
         headers: {
@@ -68,9 +70,8 @@ export default function Home() {
           // "Content-Type": "application/json",
         },
       });
-      console.log("data", data);
-      setResponseData(result);
-      console.log("result.data", result);
+      console.log("result", result.data);
+      setResponseData(result.data);
     } catch (error) {
       console.log("error", error);
     }
@@ -85,6 +86,12 @@ export default function Home() {
     setProducts(items);
   };
   console.log("products", products);
+
+  const handleSubmit = async (localData, seletedProduct) => {
+    setProducts((prev) => {
+      const newProducts = [...prev];
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center">
@@ -101,7 +108,7 @@ export default function Home() {
             {(provided, snapshot) => (
               <div {...provided.droppableProps} ref={provided.innerRef}>
                 {products.map((item, index) => (
-                  <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
+                  <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index}>
                     {(provided, snapshot) => (
                       <>
                         <div
@@ -203,6 +210,10 @@ export default function Home() {
           getProducts={getProducts}
           responseData={responseData}
           setResponseData={setResponseData}
+          search={search}
+          setSearch={setSearch}
+          page={page}
+          setPage={setPage}
         />
       )}
     </div>
